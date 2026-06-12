@@ -1,0 +1,4 @@
+.playwright-mcp/
+.gemini/
+__pycache__/
+*.pyc
