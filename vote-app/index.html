@@ -267,6 +267,9 @@ body{
   box-shadow:0 8px 24px rgba(5,150,105,.4);
 }
 @keyframes savePulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,.4)}50%{box-shadow:0 0 0 8px rgba(5,150,105,.15)}}
+.btn.btn-loading{pointer-events:none;opacity:.7}
+.btn.btn-loading .btn-spinner{display:inline-block;animation:btnSpin .8s linear infinite}
+@keyframes btnSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 .results{
   background:rgba(255,255,255,.5);
@@ -718,18 +721,26 @@ function applyBrushToCard(key,cardEl){
   cardEl.addEventListener('animationend',()=>cardEl.classList.remove('pop-anim'),{once:true});
 }
 
+function btnLoading(el,loading,label){
+  if(loading){el.dataset.origLabel=el.textContent;el.innerHTML='<span class="btn-spinner">⏳</span> '+label;el.classList.add('btn-loading');el.disabled=true}
+  else{el.textContent=el.dataset.origLabel||'';el.classList.remove('btn-loading');el.disabled=false}
+}
 async function handleSave(){
-  if(!await showConfirm('Lưu tất cả thay đổi?'))return
+  if(!await showConfirm('Lưu tất cả thay đổi?'))return;
+  const btn=document.getElementById('btn-save');
+  btnLoading(btn,true,'Đang lưu...');
   myStatuses={...stagedStatuses};
-  try{await apiSave(myStatuses);allData[userName]={...myStatuses};historyStack=[];isDirty=!1;setConnBadge('online','Đã lưu');toast('✅ Đã lưu trạng thái');updateDirty()}catch(e){await showModal('Lỗi lưu: '+e.message)}
-  renderAll()
+  try{await apiSave(myStatuses);allData[userName]={...myStatuses};historyStack=[];isDirty=!1;setConnBadge('online','Đã lưu');toast('✅ Đã lưu trạng thái')}catch(e){await showModal('Lỗi lưu: '+e.message)}
+  btnLoading(btn,false);updateDirty();renderAll()
 }
 async function handleClearAll(){
   if(Object.keys(myStatuses).length===0&&Object.keys(stagedStatuses).length===0){await showModal('Không có trạng thái nào để xoá.');return}
-  if(!await showConfirm('Xoá bỏ toàn bộ trạng thái của tài khoản?'))return
+  if(!await showConfirm('Xoá bỏ toàn bộ trạng thái của tài khoản?'))return;
+  const btn=document.querySelector('.btn-danger');
+  btnLoading(btn,true,'Đang xoá...');
   setConnBadge('loading','Đang xoá...');
   try{await apiDeleteUser(userName);delete allData[userName];myStatuses={};stagedStatuses={};historyStack=[];isDirty=!1;setConnBadge('online','Đã xoá');toast('🗑 Đã xoá trạng thái tài khoản')}catch(e){setConnBadge('online','Lỗi');await showModal('Lỗi xoá: '+e.message)}
-  renderAll()
+  btnLoading(btn,false);renderAll()
 }
 async function handleUndo(){
   if(!isDirty){await showModal('Không có thay đổi nào so với lần Xác nhận gần nhất.');return}
