@@ -605,7 +605,7 @@ const VALID_NAMES=[
   'Nguyễn Thúy Hằng','Nguyễn Thanh Tùng','Phạm Anh Tuấn','Chẩu Khánh Ly','Nguyễn Văn Thắng','Giang Tuấn Minh','Phạm Công Khang','Nguyễn Thị Thương',
   'Nguyễn Anh Hào','Hà Minh Thắng','Tô Tiến Đạt','Nguyễn Mai Thanh Thư','Đào Nắng Dịu','Nguyễn Hồng Dương','Chu Thị Phương Anh','Bùi Huyền Mi',
   'Kiều Đức Nam','Vũ Tiến Dũng','Nguyễn Phương Linh','Chung Thị Mai Anh','Cao Hương Giang','Đinh Nguyễn Tùng Khánh','Ngô Thị Tâm','Nguyễn Hoàng Hà Anh',
-  'Lương Hữu Việt','Nguyễn Phương Nam','Chu Anh Trường','Nguyễn Duy Hải Bằng','Nguyễn Thị Ngọc Yến','Trần Hữu Huy Hoàng','Đào Minh Đức','Phạm Hà Anh'
+  'Lương Hữu Việt','Nguyễn Phương Nam','Chu Anh Trường','Nguyễn Duy Hải Bằng','Nguyễn Thị Ngọc Yến','Trần Hữu Huy Hoàng','Đào Minh Đức','Phạm Hà Anh','Trần Đình Quang Minh'
 ];
 function removeDiacritics(s){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').replace(/\s+/g,'').toLowerCase()}
 const USER_MAP={};for(const n of VALID_NAMES)USER_MAP[removeDiacritics(n)]=n;
@@ -657,6 +657,13 @@ function parseSheetDate(s){
   if(/^\d{4}-\d{2}-\d{2}$/.test(c))return c;
   const iso=c.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(iso)return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy=c.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if(dmy){
+    const d=String(dmy[1]).padStart(2,'0');
+    const mo=String(dmy[2]).padStart(2,'0');
+    const y=dmy[3];
+    return `${y}-${mo}-${d}`;
+  }
   const m=c.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})/i);
   if(m){
     const mos={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
@@ -677,8 +684,9 @@ function parseSheetDate(s){
 function normalizeData(d){
   const res={};
   for(const[u,ss]of Object.entries(d)){
-    res[u]={};
-    for(const[dk,st]of Object.entries(ss))res[u][parseSheetDate(dk)]=st;
+    const normUser=removeDiacritics(u);
+    res[normUser]={};
+    for(const[dk,st]of Object.entries(ss))res[normUser][parseSheetDate(dk)]=st;
   }
   return res;
 }
@@ -793,7 +801,7 @@ function renderResults(){
     if(!totals[dk])totals[dk]={green:0,yellow:0,red:0};totals[dk][st]=(totals[dk][st]||0)+1
   }
   const ent=Object.entries(totals);
-  const tv=Object.keys(allData).length,tu=VALID_NAMES.length;
+  const tv=Object.values(allData).filter(ss=>Object.keys(ss).length>0).length,tu=VALID_NAMES.length;
 
   if(ent.length===0){
     div.innerHTML='<div class="results-empty"><span class="empty-icon">📭</span>Chưa có bình chọn nào. Hãy là người đầu tiên!</div>'
@@ -842,7 +850,7 @@ function generateSummaryCalendar(){
   }
   g.innerHTML='';g.appendChild(f);
   const vc=document.getElementById('voter-count');
-  if(vc){const tv=Object.keys(allData).length,tu=VALID_NAMES.length;vc.textContent=`${tv}/${tu} người đã bình chọn`}
+  if(vc){const tv=Object.values(allData).filter(ss=>Object.keys(ss).length>0).length,tu=VALID_NAMES.length;vc.textContent=`${tv}/${tu} người đã bình chọn`}
 }
 function renderAll(){generateCalendars();generateSummaryCalendar();updateDirty()}
 async function refreshData(){try{await loadFromAPI(true);renderAll()}catch(e){}}

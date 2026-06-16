@@ -45,12 +45,18 @@ function getAllVotes() {
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return {};
 
+  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   const result = {};
   for (let i = 1; i < data.length; i++) {
     const [, userName, date, status] = data[i];
     if (!userName || !date || !status) continue;
     const name = String(userName).trim();
-    const dk = String(date).trim();
+    let dk;
+    if (date instanceof Date) {
+      dk = Utilities.formatDate(date, tz, "yyyy-MM-dd");
+    } else {
+      dk = String(date).trim();
+    }
     const st = String(status).trim();
     if (!result[name]) result[name] = {};
     result[name][dk] = st;
